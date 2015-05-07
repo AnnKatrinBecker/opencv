@@ -110,27 +110,6 @@ static inline void linearizeHomographyAt( const Mat_<double>& H, const Point2f& 
         A.setTo(Scalar::all(std::numeric_limits<double>::max()));
 }
 
-class EllipticKeyPoint
-{
-public:
-    EllipticKeyPoint();
-    EllipticKeyPoint( const Point2f& _center, const Scalar& _ellipse );
-
-    static void convert( const std::vector<KeyPoint>& src, std::vector<EllipticKeyPoint>& dst );
-    static void convert( const std::vector<EllipticKeyPoint>& src, std::vector<KeyPoint>& dst );
-
-    static Mat_<double> getSecondMomentsMatrix( const Scalar& _ellipse );
-    Mat_<double> getSecondMomentsMatrix() const;
-
-    void calcProjection( const Mat_<double>& H, EllipticKeyPoint& projection ) const;
-    static void calcProjection( const std::vector<EllipticKeyPoint>& src, const Mat_<double>& H, std::vector<EllipticKeyPoint>& dst );
-
-    Point2f center;
-    Scalar ellipse; // 3 elements a, b, c: ax^2+2bxy+cy^2=1
-    Size_<float> axes; // half length of ellipse axes
-    Size_<float> boundingBox; // half sizes of bounding box which sides are parallel to the coordinate axes
-};
-
 EllipticKeyPoint::EllipticKeyPoint()
 {
     *this = EllipticKeyPoint(Point2f(0,0), Scalar(1, 0, 1) );
@@ -219,7 +198,7 @@ void EllipticKeyPoint::calcProjection( const std::vector<EllipticKeyPoint>& src,
     }
 }
 
-static void filterEllipticKeyPointsByImageSize( std::vector<EllipticKeyPoint>& keypoints, const Size& imgSize )
+void cv::filterEllipticKeyPointsByImageSize( std::vector<EllipticKeyPoint>& keypoints, const Size& imgSize )
 {
     if( !keypoints.empty() )
     {
@@ -292,29 +271,10 @@ struct IntersectAreaCounter
 
     Point2f diff;
     Scalar ellipse1, ellipse2;
-
 };
 
-struct SIdx
-{
-    SIdx() : S(-1), i1(-1), i2(-1) {}
-    SIdx(float _S, int _i1, int _i2) : S(_S), i1(_i1), i2(_i2) {}
-    float S;
-    int i1;
-    int i2;
 
-    bool operator<(const SIdx& v) const { return S > v.S; }
-
-    struct UsedFinder
-    {
-        UsedFinder(const SIdx& _used) : used(_used) {}
-        const SIdx& used;
-        bool operator()(const SIdx& v) const { return  (v.i1 == used.i1 || v.i2 == used.i2); }
-        UsedFinder& operator=(const UsedFinder&);
-    };
-};
-
-static void computeOneToOneMatchedOverlaps( const std::vector<EllipticKeyPoint>& keypoints1, const std::vector<EllipticKeyPoint>& keypoints2t,
+void cv::computeOneToOneMatchedOverlaps( const std::vector<EllipticKeyPoint>& keypoints1, const std::vector<EllipticKeyPoint>& keypoints2t,
                                             bool commonPart, std::vector<SIdx>& overlaps, float minOverlap )
 {
     CV_Assert( minOverlap >= 0.f );
