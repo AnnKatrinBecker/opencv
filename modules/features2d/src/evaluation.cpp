@@ -273,6 +273,48 @@ struct IntersectAreaCounter
     Scalar ellipse1, ellipse2;
 };
 
+bool cv::computeOverlap(const EllipticKeyPoint& kp1, const EllipticKeyPoint& kp2, float maxDist, float fac, float minOverlap, float& ov)
+{
+    Point2f diff = kp1.center - kp2.center;
+    if (norm(diff) > maxDist)
+    {
+        return false;
+    }
+    else {
+        EllipticKeyPoint keypoint1a = EllipticKeyPoint(kp1.center, Scalar(fac * kp1.ellipse[0],
+                                                                       fac * kp1.ellipse[1],
+                                                                       fac * kp1.ellipse[2]));
+        EllipticKeyPoint keypoint2a = EllipticKeyPoint(kp2.center, Scalar(fac * kp2.ellipse[0],
+                                                                       fac * kp2.ellipse[1],
+                                                                       fac * kp2.ellipse[2]));
+
+        int maxx = (int) ceil(
+                (keypoint1a.boundingBox.width > (diff.x + keypoint2a.boundingBox.width)) ?
+                keypoint1a.boundingBox.width : (diff.x + keypoint2a.boundingBox.width));
+        int minx = (int) floor(
+                (-keypoint1a.boundingBox.width < (diff.x - keypoint2a.boundingBox.width)) ?
+                -keypoint1a.boundingBox.width : (diff.x - keypoint2a.boundingBox.width));
+
+        int maxy = (int) ceil(
+                (keypoint1a.boundingBox.height > (diff.y + keypoint2a.boundingBox.height)) ?
+                keypoint1a.boundingBox.height : (diff.y + keypoint2a.boundingBox.height));
+        int miny = (int) floor(
+                (-keypoint1a.boundingBox.height < (diff.y - keypoint2a.boundingBox.height)) ?
+                -keypoint1a.boundingBox.height : (diff.y - keypoint2a.boundingBox.height));
+        int mina = (maxx - minx) < (maxy - miny) ? (maxx - minx) : (maxy - miny);
+
+        //compute the area
+        float dr = (float) mina / 50.f;
+        int N = (int) floor((float) (maxx - minx) / dr);
+        IntersectAreaCounter ac(dr, minx, miny, maxy, diff, keypoint1a.ellipse, keypoint2a.ellipse);
+        parallel_reduce(BlockedRange(0, N + 1), ac);
+        if (ac.bna > 0) {
+            ov = (float) ac.bna / (float) ac.bua;
+            if (ov >= minOverlap) return true;
+        }
+    }
+    return false;
+}
 
 void cv::computeOneToOneMatchedOverlaps( const std::vector<EllipticKeyPoint>& keypoints1, const std::vector<EllipticKeyPoint>& keypoints2t,
                                             bool commonPart, std::vector<SIdx>& overlaps, float minOverlap )
@@ -298,37 +340,12 @@ void cv::computeOneToOneMatchedOverlaps( const std::vector<EllipticKeyPoint>& ke
 
         EllipticKeyPoint keypoint1a = EllipticKeyPoint( kp1.center, Scalar(fac*kp1.ellipse[0], fac*kp1.ellipse[1], fac*kp1.ellipse[2]) );
 
+        float ov;
         for( size_t i2 = 0; i2 < keypoints2t.size(); i2++ )
         {
             EllipticKeyPoint kp2 = keypoints2t[i2];
-            Point2f diff = kp2.center - kp1.center;
-
-            if( norm(diff) < maxDist )
-            {
-                EllipticKeyPoint keypoint2a = EllipticKeyPoint( kp2.center, Scalar(fac*kp2.ellipse[0], fac*kp2.ellipse[1], fac*kp2.ellipse[2]) );
-                //find the largest eigenvalue
-                int maxx =  (int)ceil(( keypoint1a.boundingBox.width > (diff.x+keypoint2a.boundingBox.width)) ?
-                                     keypoint1a.boundingBox.width : (diff.x+keypoint2a.boundingBox.width));
-                int minx = (int)floor((-keypoint1a.boundingBox.width < (diff.x-keypoint2a.boundingBox.width)) ?
-                                    -keypoint1a.boundingBox.width : (diff.x-keypoint2a.boundingBox.width));
-
-                int maxy =  (int)ceil(( keypoint1a.boundingBox.height > (diff.y+keypoint2a.boundingBox.height)) ?
-                                     keypoint1a.boundingBox.height : (diff.y+keypoint2a.boundingBox.height));
-                int miny = (int)floor((-keypoint1a.boundingBox.height < (diff.y-keypoint2a.boundingBox.height)) ?
-                                    -keypoint1a.boundingBox.height : (diff.y-keypoint2a.boundingBox.height));
-                int mina = (maxx-minx) < (maxy-miny) ? (maxx-minx) : (maxy-miny) ;
-
-                //compute the area
-                float dr = (float)mina/50.f;
-                int N = (int)floor((float)(maxx - minx) / dr);
-                IntersectAreaCounter ac( dr, minx, miny, maxy, diff, keypoint1a.ellipse, keypoint2a.ellipse );
-                parallel_reduce( BlockedRange(0, N+1), ac );
-                if( ac.bna > 0 )
-                {
-                    float ov =  (float)ac.bna / (float)ac.bua;
-                    if( ov >= minOverlap )
-                        overlaps.push_back(SIdx(ov, (int)i1, (int)i2));
-                }
+            if(computeOverlap(kp1, kp2, maxDist, fac, minOverlap, ov)) {
+                overlaps.push_back(SIdx(ov, (int)i1, (int)i2));
             }
         }
     }
