@@ -174,7 +174,7 @@ CV_EXPORTS static bool computeOverlap(const EllipticKeyPoint& kp1, const Ellipti
 
 
 CV_EXPORTS static void computeOneToOneMatchedOverlaps( const std::vector<EllipticKeyPoint>& keypoints1, const std::vector<EllipticKeyPoint>& keypoints2t,
-                                                       bool commonPart, std::vector<SIdx>& overlaps, float minOverlap );
+                                                       bool commonPart, std::vector<SIdx>& overlaps, float minOverlap, float maxDistFactor = 4);
 
 
 /************************************ Base Classes ************************************/

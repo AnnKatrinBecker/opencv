@@ -317,7 +317,7 @@ bool cv::computeOverlap(const EllipticKeyPoint& kp1, const EllipticKeyPoint& kp2
 }
 
 void cv::computeOneToOneMatchedOverlaps( const std::vector<EllipticKeyPoint>& keypoints1, const std::vector<EllipticKeyPoint>& keypoints2t,
-                                            bool commonPart, std::vector<SIdx>& overlaps, float minOverlap )
+                                            bool commonPart, std::vector<SIdx>& overlaps, float minOverlap, float maxDistFactor)
 {
     CV_Assert( minOverlap >= 0.f );
     overlaps.clear();
@@ -335,7 +335,7 @@ void cv::computeOneToOneMatchedOverlaps( const std::vector<EllipticKeyPoint>& ke
         if( !commonPart )
             fac=3;
 
-        maxDist = maxDist*4;
+        maxDist = maxDist*maxDistFactor;
         fac = 1.f/(fac*fac);
 
         EllipticKeyPoint keypoint1a = EllipticKeyPoint( kp1.center, Scalar(fac*kp1.ellipse[0], fac*kp1.ellipse[1], fac*kp1.ellipse[2]) );
