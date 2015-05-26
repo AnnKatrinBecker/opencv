@@ -115,6 +115,25 @@ EllipticKeyPoint::EllipticKeyPoint()
     *this = EllipticKeyPoint(Point2f(0,0), Scalar(1, 0, 1) );
 }
 
+EllipticKeyPoint::EllipticKeyPoint(const RotatedRect& rect) {
+  Point2f center_ = rect.center;
+  double ra = rect.size.height;
+  double rb = rect.size.width;
+  double rang = rect.angle;
+  if (rb > ra) rang = (int)(rang+90) % 360;
+  rang = (360 - rect.angle) * 0.0174532925;
+  rang = rang - 6.28318530718;
+  double a = (cos(rang) * cos(rang) / (ra*ra)) + (sin(rang) * sin(rang) / (rb * rb));
+  double b = cos(rang) * sin(rang) * (1.0/(ra*ra)-1.0/(rb*rb));
+  double c = (sin(rang) * sin(rang) / (ra*ra)) + (cos(rang) * cos(rang) / (rb * rb));
+  Scalar ellipse_(a,b,c);
+  *this = EllipticKeyPoint(center_, ellipse_);
+}
+
+RotatedRect EllipticKeyPoint::asRotatedRect() {
+  return RotatedRect(center, axes, 360-angle);
+}
+
 EllipticKeyPoint::EllipticKeyPoint( const Point2f& _center, const Scalar& _ellipse )
 {
     center = _center;
@@ -127,8 +146,21 @@ EllipticKeyPoint::EllipticKeyPoint( const Point2f& _center, const Scalar& _ellip
     axes.width = (float)(1/sqrt(x1));
     axes.height = (float)(1/sqrt(x2));
 
+    Mat covmat = (Mat_<double>(2,2) << a, b, b, c);
+    Mat eigenvectors, eigenvalues;
+    eigen(covmat, eigenvalues, eigenvectors);
+    angle = atan2(eigenvectors.at<double>(0,1), eigenvectors.at<double>(0,0));
+    //Shift to [0, 2pi] interval instead of [-pi, pi]
+    if (angle < 0) angle += 6.28318530718;
+    //Convert to degrees instead of radians
+    angle = 180*angle/3.14159265359;
+
     boundingBox.width = (float)sqrt(ellipse[2]/ac_b2);
     boundingBox.height = (float)sqrt(ellipse[0]/ac_b2);
+}
+
+double EllipticKeyPoint::getAngle() {
+  return angle;
 }
 
 Mat_<double> EllipticKeyPoint::getSecondMomentsMatrix( const Scalar& _ellipse )

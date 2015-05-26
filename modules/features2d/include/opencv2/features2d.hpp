@@ -132,6 +132,10 @@ class CV_EXPORTS EllipticKeyPoint
 public:
     EllipticKeyPoint();
     EllipticKeyPoint( const Point2f& _center, const Scalar& _ellipse );
+    EllipticKeyPoint( const RotatedRect& rect );
+
+    double getAngle();
+    RotatedRect asRotatedRect();
 
     static void convert( const std::vector<KeyPoint>& src, std::vector<EllipticKeyPoint>& dst );
     static void convert( const std::vector<EllipticKeyPoint>& src, std::vector<KeyPoint>& dst );
@@ -145,6 +149,7 @@ public:
     Point2f center;
     Scalar ellipse; // 3 elements a, b, c: ax^2+2bxy+cy^2=1
     Size_<float> axes; // half length of ellipse axes
+    double angle;
     Size_<float> boundingBox; // half sizes of bounding box which sides are parallel to the coordinate axes
 };
 
