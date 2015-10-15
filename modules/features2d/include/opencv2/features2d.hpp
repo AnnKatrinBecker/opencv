@@ -172,14 +172,14 @@ struct CV_EXPORTS SIdx
     };
 };
 
-CV_EXPORTS static void filterEllipticKeyPointsByImageSize( std::vector<EllipticKeyPoint>& keypoints, const Size& imgSize );
+CV_EXPORTS void filterEllipticKeyPointsByImageSize( std::vector<EllipticKeyPoint>& keypoints, const Size& imgSize );
 
 
-CV_EXPORTS static bool computeOverlap(const EllipticKeyPoint& kp1, const EllipticKeyPoint& kp2, float maxDist, float fac, float minOverlap, float& ov);
+CV_EXPORTS bool computeOverlap(const EllipticKeyPoint& kp1, const EllipticKeyPoint& kp2, float maxDist, float fac, float minOverlap, float& ov);
 
 
-CV_EXPORTS static void computeOneToOneMatchedOverlaps( const std::vector<EllipticKeyPoint>& keypoints1, const std::vector<EllipticKeyPoint>& keypoints2t,
-                                                       bool commonPart, std::vector<SIdx>& overlaps, float minOverlap, float maxDistFactor = 4);
+CV_EXPORTS void computeOneToOneMatchedOverlaps( const std::vector<EllipticKeyPoint>& keypoints1, const std::vector<EllipticKeyPoint>& keypoints2t,
+                                                bool commonPart, std::vector<SIdx>& overlaps, float minOverlap, float maxDistFactor = 4);
 
 
 /************************************ Base Classes ************************************/
